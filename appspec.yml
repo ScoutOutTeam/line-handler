@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+files:
+  - source: /line-handler.jar
+    destination: /home/appadmin/app/
+hooks:
+  ApplicationStop:
+    - location: scripts/StopLineHandler.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: scripts/StartLineHandler.sh
+      timeout: 300
+      runas: root

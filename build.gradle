@@ -1,0 +1,79 @@
+buildscript {
+    ext {
+        springBootVersion = '1.4.7.RELEASE'
+    }
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("net.researchgate:gradle-release:2.4.0")
+    }
+}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: 'net.researchgate.release'
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.8
+
+springBoot {
+    executable = true
+}
+
+jar {
+    baseName = 'line-handler'
+}
+
+repositories {
+    jcenter()
+}
+
+// Release plug-in : https://github.com/researchgate/gradle-release
+release {
+    failOnSnapshotDependencies = false
+    preTagCommitMessage = '[Release LINE Handler] - pre tag commit:'
+    tagCommitMessage = '[Release LINE Handler] - creating tag:'
+    newVersionCommitMessage = '[Release LINE Handler] - new version commit:'
+    tagTemplate = '$name-$version'
+    versionPropertyFile = '/src/main/resources/gradle.properties'
+}
+
+defaultTasks 'clean', 'build'
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-actuator")
+    compile("com.linecorp.bot:line-bot-spring-boot:1.12.0")
+    compile("net.logstash.logback:logstash-logback-encoder:4.8")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.5.1'
+}
+
+/* For AWS deployments, need to copy the appspec file to the libs directory */
+task copyAppSpec(type: Copy) {
+    from 'appspec.yml'
+    into 'build/libs'
+}
+
+/* For AWS deployments, need to copy the scripts necessary to the libs directory */
+task copyScripts(type: Copy) {
+    from 'awsscripts'
+    into 'build/libs/scripts'
+}
+
+task awsRevision(type: Zip) {
+    from 'build/libs'
+    baseName 'line-handler'
+}
+
+/* The AWS Revision is created by grouping all artifacts from the libs directory
+ * which should now include the appspec file and the scripts necessary for deployment
+ */
+awsRevision.dependsOn build
+awsRevision.dependsOn copyAppSpec
+awsRevision.dependsOn copyScripts
