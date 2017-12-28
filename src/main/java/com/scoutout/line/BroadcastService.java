@@ -68,4 +68,5 @@ public class BroadcastService {
         lineMessagingClient.pushMessage(pushMessage);
         return new ResponseEntity<>(pushMessage.toString(), HttpStatus.OK);
     }
+
 }

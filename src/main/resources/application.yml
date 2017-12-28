@@ -3,6 +3,7 @@ spring:
     ansi:
       enabled: ALWAYS
 
+# For LINE Messaging API
 line.bot:
   channel-token: "YGHvY8/llFOurDQn7YEWkGc2DYd0E5kY54+YWruH0ejgotEoHCFjSKNYuODr0Gh9wMvCkzk42/VkVKCBThkwG2gHD4MMnNBNQSjNV5kK9iQXY6/SjlrcyBxpPyXxsF3aCp7384G/bc+vuEyu8oEF4gdB04t89/1O/w1cDnyilFU="
   channel-secret: "6861ffb6f766ad4501fb40eb1ec47634"
