@@ -77,25 +77,43 @@ public class LoginService {
         if (null != authCode) {
             ResponseEntity<String> response = exchangeAuthCodeForAccessToken(authCode);
             LineLoginBean loginBean = extractLineLoginResponse(response);
-            logger.debug(loginBean.toString());
+            logger.debug("LoginBean = {}", loginBean.toString());
             redirectAttributes.addAttribute("lineToken", loginBean.getAccessToken());
 
             // TODO We should just return LineLoginBean to client, and client handle it.
-            RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> akelaResponse = restTemplate.getForEntity("https://test.scoutout.net/api/v1.0/user/"+loginBean.getUuid()+"/line/"+loginBean.getLineUserId()+"/accesstoken/"+loginBean.getAccessToken(), String.class);
-            if (akelaResponse.getStatusCode().equals(HttpStatus.OK)) {
+            if (null != loginBean.getUuid() && !loginBean.getUuid().isEmpty()) {
+                RestTemplate restTemplate = new RestTemplate();
+                ResponseEntity<String> akelaResponse = restTemplate.getForEntity("https://test.scoutout.net/api/v1.0/user/"+loginBean.getUuid()+"/line/"+loginBean.getLineUserId()+"/accesstoken/"+loginBean.getAccessToken(), String.class);
                 JsonObject userModel = new Gson().fromJson(akelaResponse.getBody(), JsonObject.class);
-                logger.debug("SUCCESSFULLY LINKED {} {} UUID {} WITH  LINE USER ID {}",
-                        userModel.get("firstName").getAsString(),
-                        userModel.get("lastName").getAsString(),
-                        loginBean.getUuid(),
-                        loginBean.getLineUserId());
-                TextMessage textMessage = new TextMessage("สวัสดีคุณ "+userModel.get("firstName").getAsString()+" "+ userModel.get("lastName").getAsString()+" "+
-                        "ยินดีต้อนรับสู่บริการของ ScoutOut กรุณากรอกข้อมูลการทำงานและประวัติการศึกษาให้ครบถ้วน และคุณสามารถเข้าไปค้นหางานทที่น่าสนใจได้จาก \"เมนู\" ด่านล่าง และเราจะส่งงานที่น่าสนใจให้กับตุณในอนาคต");
-                lineMessagingClient.pushMessage(new PushMessage(loginBean.getLineUserId(), textMessage));
+                if (akelaResponse.getStatusCode().equals(HttpStatus.OK)) {
+                    logger.debug("SUCCESSFULLY LINKED {} {} UUID {} WITH  LINE USER ID {}",
+                            userModel.get("firstName").getAsString(),
+                            userModel.get("lastName").getAsString(),
+                            loginBean.getUuid(),
+                            loginBean.getLineUserId());
+                }
             }
         }
         return new RedirectView("https://scoutout-on-line.scoutout.net");
+    }
+
+    @GetMapping("/revoke")
+    public ResponseEntity<?> handleRevoke(@RequestParam(value = "access_token", required = false) String accessToken){
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        MultiValueMap<String, String> map= new LinkedMultiValueMap<>();
+        map.add("access_token", accessToken);
+        map.add("client_id", "1554235462");
+        map.add("client_secret", "442ee71610d23a1935c9465a3df2e56f");
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+        return restTemplate.postForEntity( "https://api.line.me/oauth2/v2.1/revoke", request , String.class );
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> handleVerify(@RequestParam(value = "access_token", required = false) String accessToken){
+        RestTemplate restTemplate = new RestTemplate();
+        return restTemplate.getForEntity( "https://api.line.me/oauth2/v2.1/verify?access_token="+accessToken, String.class);
     }
 
     private ResponseEntity<String> exchangeAuthCodeForAccessToken(@RequestParam(value = "code", required = false) String authCode) {
@@ -133,7 +151,9 @@ public class LoginService {
         loginBean.setChannelId(jwtPayload.get("aud").getAsString());
         loginBean.setName(jwtPayload.get("name").getAsString());
         loginBean.setPictureUrl(new URL(jwtPayload.get("picture").getAsString()));
-        loginBean.setUuid(jwtPayload.get("nonce").getAsString());
+        if (null != jwtPayload.get("nonce")) {
+            loginBean.setUuid(jwtPayload.get("nonce").getAsString());
+        }
         return loginBean;
     }
 }
