@@ -1,7 +1,7 @@
 # line-handler
 Spring Boot project integrated with LINE Messaging API and LINE Log-in API. Ready to handle incoming messages and SSO with LINE Login in LINE Channel
 
-Only need to set two parameters below. Note: handler.path is not required.
+Please set required parameters below.
 
 ```
 line.bot:
@@ -12,8 +12,9 @@ line.bot:
 line.login:
   channel-token: "Your LINE Log-in channel ID"
   channel-secret: "Your LINE Log-in channel secret"
-  redirect-uri: 
+  redirect-uri: "(example)https://line-handler-test.scoutout.net/auth"
 ```
+Build with Gradle wrapper `./gradlew clean build` and run with `./gradlew bootrun`
 
 ### References
 https://developers.line.me/en/docs/messaging-api/overview/  
